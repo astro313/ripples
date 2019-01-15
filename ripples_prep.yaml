@@ -1,0 +1,30 @@
+cont:
+    savepath: '/data/dleung/DATA/ALMA/QSO_c5/RXJ0911/calibrated/ripples/'
+    overwrite: False
+    data:
+        contMS: '/data/dleung/DATA/ALMA/QSO_c5/RXJ0911/calibrated/calibrated.LSRK_cont.ms'
+    timebin: True
+    timebinsec: 660
+    nsam: 4000
+line:
+    savepath: '/data/dleung/DATA/ALMA/QSO_c5/RXJ0911/calibrated/ripples/CO/'
+    overwrite: True
+    data:
+        # line cube after subtracing continuum
+        lineMS: '/data/dleung/DATA/ALMA/QSO_c5/RXJ0911/calibrated/calibrated.LSRK.ms.contsub'
+        unbinnedIm: 'pseudo_line.contsub.nobin.R05.dirty'
+    timebin: True
+    timebinsec: 20
+    redshift: 2.7961
+    slice:
+        # from the unbinned cube, see ripples_utils.vel2chan()
+        # ripples_utils.vel2chan('pseudo_line.contsub.nobin.R05.dirty.fits', [-200, -100, 0, 100, 200])
+        # [1064, 1012, 960, 909, 857]
+        s0: '0:1012~1046,1:1012~1046,2:1012~1046'
+        s1: '0:960~1012,1:960~1012,2:960~1012'
+        s2: '0:909~960,1:909~960,2:909~960'
+        s3: '0:857~909,1:857~909,2:857~909'
+shiftpcd:
+    shiftpcd: False
+    field: 'RXJ0911'
+    pcd: '09h11m27.56447s +05d50m54.302s'
