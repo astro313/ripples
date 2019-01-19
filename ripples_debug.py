@@ -549,131 +549,131 @@ def ms2ripples_yashar_getallspw(spwlist, visname='test/calibrated.LSRK_contphsSh
     f.close()
 
 
-# def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrated.LSRK_contphsShift_timebin660s_1spw.ms'):
-#     """
-#     Get data from all the spw, after running mstranform to combine all SPWs
+def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrated.LSRK_contphsShift_timebin660s_1spw.ms'):
+    """
+    Get data from all the spw, after running mstranform to combine all SPWs
 
-#     """
+    """
 
-#     from array import array
-#     import numpy as np
+    from array import array
+    import numpy as np
 
-#     ms.open(visname, nomodify=False)
+    ms.open(visname, nomodify=False)
 
-#     for i_spw in spwlist:
-#         ms.selectinit(datadescid=i_spw)
-#         recD = ms.getdata(["data"])
-#         aD = recD["data"]
-#         print aD.shape
+    for i_spw in spwlist:
+        ms.selectinit(datadescid=i_spw)
+        recD = ms.getdata(["data"])
+        aD = recD["data"]
+        print aD.shape
 
-#         flah_d = ms.getdata(["flag"])
-#         flah_d = flah_d["flag"]
+        flah_d = ms.getdata(["flag"])
+        flah_d = flah_d["flag"]
 
-#         recS = ms.getdata(["sigma"])
-#         aS = recS["sigma"]     # print aS.shape
-#         weight = aS**-2
-#         weight = np.average(weight, axis=0)
-#         weight = np.array(zip(weight, weight)).flatten()         # 2 * nvis elements
+        recS = ms.getdata(["sigma"])
+        aS = recS["sigma"]     # print aS.shape
+        weight = aS**-2
+        weight = np.average(weight, axis=0)
+        weight = np.array(zip(weight, weight)).flatten()         # 2 * nvis elements
 
-#         anD1 = ms.getdata(["antenna1"])
-#         anD1 = anD1["antenna1"]
+        anD1 = ms.getdata(["antenna1"])
+        anD1 = anD1["antenna1"]
 
-#         anD2 = ms.getdata(["antenna2"])
-#         anD2 = anD2["antenna2"]
+        anD2 = ms.getdata(["antenna2"])
+        anD2 = anD2["antenna2"]
 
-#         UVW = ms.getdata(["UVW"])
-#         uvpoints = UVW["uvw"]
-#         u = uvpoints[0]
-#         v = uvpoints[1]
-#         nvis = len(v)
-#         print "nvis: {:}".format(nvis)
-#         print "nchan in {:}: {:}".format(i_spw, len(aD[0]))
-
-
-#         for j in range(0, len(aD[0])):
-
-#             arr = (aD[0][j] + aD[1][j]) / 2        # average the two hands
-#             float_array_real = array('d', arr.real)
-#             float_array_imag = array('d', arr.imag)
-#             vis = np.array(zip(float_array_real, float_array_imag)).flatten()
-#             print vis[-10:]
-
-#             if j == 0:
-#                 vvis = vis
-#             elif j > 0:
-#                 vvis = np.hstack((vvis, vis))
-
-#         print u.shape
-#         print v.shape
-#         print anD1.shape
-#         print anD2.shape
-#         print weight.shape
-#         print vvis.shape
-#         assert len(vvis)/2 == len(u)
-
-#         # (26730,)
-#         # (26730,)
-#         # (26730,)
-#         # (26730,)
-#         # (53460,)
-#         # (213840,)
-#         # hmmm....
-
-#     # w/o rescaling for now
-#     f = open('test_mstranform/sigma_squared_inv.bin', 'wb')
-#     for i in range(len(w)):
-#         w[i].tofile(f)
-#     f.close()
-
-#     output_file = open('test_mstranform/vis_chan_0.bin', 'wb')
-#     vvis.tofile(output_file)
-#     output_file.close()
-
-#     f = open('test_mstranform/u.bin', 'wb')
-#     for i in range(0, len(u)):
-#         u[i].tofile(f)
-#     f.close()
-
-#     f = open('test_mstranform/v.bin', 'wb')
-#     for i in range(0, len(v)):
-#         v[i].tofile(f)
-#     f.close()
-
-#     f = open('test_mstranform/ant1.bin', 'wb')
-#     anD1 = np.asarray(anD1, dtype=np.float_)
-#     for i in range(0, len(anD1)):
-#         anD1[i].tofile(f)
-#     f.close()
+        UVW = ms.getdata(["UVW"])
+        uvpoints = UVW["uvw"]
+        u = uvpoints[0]
+        v = uvpoints[1]
+        nvis = len(v)
+        print "nvis: {:}".format(nvis)
+        print "nchan in {:}: {:}".format(i_spw, len(aD[0]))
 
 
-#     f = open('test_mstranform/ant2.bin', 'wb')
-#     anD2 = np.asarray(anD2, dtype=np.float_)
-#     for i in range(0, len(anD2)):
-#         anD2[i].tofile(f)
-#     f.close()
+        for j in range(0, len(aD[0])):
 
-#     blah = np.zeros((nvis))
-#     f = open('test_mstranform/chan.bin', 'wb')
-#     for i in range(len(blah)):
-#         blah[i].tofile(f)
-#     f.close()
+            arr = (aD[0][j] + aD[1][j]) / 2        # average the two hands
+            float_array_real = array('d', arr.real)
+            float_array_imag = array('d', arr.imag)
+            vis = np.array(zip(float_array_real, float_array_imag)).flatten()
+            print vis[-10:]
 
-#     # added
-#     rec = ms.getdata(["axis_info"])
-#     chan_freqs = np.squeeze(rec["axis_info"]["freq_axis"]["chan_freq"])    # [chan]
-#     nchan = len(rec['axis_info']['freq_axis']['chan_freq'][:, 0])
-#     assert len(aD[0]) == nchan
-#     print chan_freqs
-#     import pdb; pdb.set_trace()
+            if j == 0:
+                vvis = vis
+            elif j > 0:
+                vvis = np.hstack((vvis, vis))
 
-#     freq_per_vis = np.array([chan_freqs for _ in range(nvis)])
+        print u.shape
+        print v.shape
+        print anD1.shape
+        print anD2.shape
+        print weight.shape
+        print vvis.shape
+        assert len(vvis)/2 == len(u)
 
-#     f = open('test_mstranform/frequencies.bin', 'wb')
-#     for i in range(len(freq_per_vis)):
-#         freq_per_vis[i].tofile(f)
-#     f.close()
+        # (26730,)
+        # (26730,)
+        # (26730,)
+        # (26730,)
+        # (53460,)
+        # (213840,)
+        # hmmm....
 
-#     import pdb; pdb.set_trace()
+    # w/o rescaling for now
+    f = open('test_mstranform/sigma_squared_inv.bin', 'wb')
+    for i in range(len(w)):
+        w[i].tofile(f)
+    f.close()
+
+    output_file = open('test_mstranform/vis_chan_0.bin', 'wb')
+    vvis.tofile(output_file)
+    output_file.close()
+
+    f = open('test_mstranform/u.bin', 'wb')
+    for i in range(0, len(u)):
+        u[i].tofile(f)
+    f.close()
+
+    f = open('test_mstranform/v.bin', 'wb')
+    for i in range(0, len(v)):
+        v[i].tofile(f)
+    f.close()
+
+    f = open('test_mstranform/ant1.bin', 'wb')
+    anD1 = np.asarray(anD1, dtype=np.float_)
+    for i in range(0, len(anD1)):
+        anD1[i].tofile(f)
+    f.close()
+
+
+    f = open('test_mstranform/ant2.bin', 'wb')
+    anD2 = np.asarray(anD2, dtype=np.float_)
+    for i in range(0, len(anD2)):
+        anD2[i].tofile(f)
+    f.close()
+
+    blah = np.zeros((nvis))
+    f = open('test_mstranform/chan.bin', 'wb')
+    for i in range(len(blah)):
+        blah[i].tofile(f)
+    f.close()
+
+    # added
+    rec = ms.getdata(["axis_info"])
+    chan_freqs = np.squeeze(rec["axis_info"]["freq_axis"]["chan_freq"])    # [chan]
+    nchan = len(rec['axis_info']['freq_axis']['chan_freq'][:, 0])
+    assert len(aD[0]) == nchan
+    print chan_freqs
+    import pdb; pdb.set_trace()
+
+    freq_per_vis = np.array([chan_freqs for _ in range(nvis)])
+
+    f = open('test_mstranform/frequencies.bin', 'wb')
+    for i in range(len(freq_per_vis)):
+        freq_per_vis[i].tofile(f)
+    f.close()
+
+    import pdb; pdb.set_trace()
 
 
 def compare_tb_ms_uvw_data(vis):
@@ -793,13 +793,28 @@ def compare_tb_ms_uvw_data(vis):
 
 def combinespw_tbtool_uvfits(vis):
 
+    """
+
+    Note
+    ----
+    mstransform combinespws=True without regridding, it only combines spws
+    that are identical with each other. You have 3 sets of 4 spws (one for each observation ID),
+    so it creates 4 channels in the single output spw. If you want to combine everything, you have
+    to define more parameters, with regridms.
+    """
+
     listobs(vis, listfile=vis.replace('.ms', '.log'), overwrite=True)
     vis1spw = vis[:vis.find('.ms')] + '_1spw.ms'
-    mstranform(vis, vis1spw, datacolumn='data', combinewspw=True)
-    listobs(vis1spw, listfile=vis1spw.replace('.ms', '.log'), overwrite=True)
+    mstranform(vis, vis1spw, datacolumn='data', combinewspw=True)   # num of unique spw will become the number of channels
+    # also combine "all the channels"
+    vis1spw1chan = vis[:vis.find('.ms')] + '_1spw_1chan.ms'
+    mstransform(vis1spw, vis1spw1chan, datacolumn='data', combinespws=True, \
+                regridms=True, nchan=1, width=4)
+    listobs(vis1spw1chan, listfile=vis1spw1chan.replace('.ms', '.log'), \
+            overwrite=True)
 
     import numpy as np
-    tb.open(vis1spw)
+    tb.open(vis1spw1chan)
     # tb.colnames
     data = tb.getcol('DATA')
     uvw = tb.getcol('UVW')
@@ -810,17 +825,15 @@ def combinespw_tbtool_uvfits(vis):
     print uvw[0, :].min(), uvw[0, :].max()
     print uvw[1, :].min(), uvw[1, :].max()
     print nvis
-    # (2, 4, 26730) (-0.0130579899997-0.00291995285079j) (0.0129214273766-8.34539532661e-05j)
+    # (2, 1, 26730) (-0.0106927361339+0.00347894337028j) (0.0101391784847+0.00074283964932j)
     # (3, 26730)
     # -1632.71137651 1877.10135185
     # -1802.52746357 2074.22084676
     # 26730
 
-    # ...... why is it .... nchan = 4 now...
-
     # ms
     i_spw = 0
-    ms.open(vis1spw, nomodify=False)
+    ms.open(vis1spw1chan, nomodify=False)
 
     ms.selectinit(datadescid=i_spw)
     recD = ms.getdata(["data"])
@@ -838,16 +851,17 @@ def combinespw_tbtool_uvfits(vis):
     print len(aD[0])
     print nvis
 
-    # (2, 4, 26730) (-0.0130579899997-0.00291995285079j) (0.0129214273766-8.34539532661e-05j)
+    # (2, 1, 26730) (-0.0106927361339+0.00347894337028j) (0.0101391784847+0.00074283964932j)
     # -1632.71137651 1877.10135185
     # -1802.52746357 2074.22084676
-    # 4
+    # 1
     # 26730
 
+
     # compare with .uvfits
-    exportuvfits(vis1spw, vis1spw.replace('.ms', '.uvfits'))
+    exportuvfits(vis1spw1chan, vis1spw1chan.replace('.ms', '.uvfits'))
     import astropy.io.fits as fits
-    xx = fits.open(vis1spw.replace('.ms', '.uvfits'))
+    xx = fits.open(vis1spw1chan.replace('.ms', '.uvfits'))
     dd = xx[0].data
     uu = dd['UU']
     vv = dd['VV']
@@ -862,19 +876,16 @@ def combinespw_tbtool_uvfits(vis):
     print nvis
 
     # (26730,) (26730,)
-    # (26730, 1, 1, 1, 4, 2, 3)
+    # (26730, 1, 1, 1, 1, 2, 3)
     # 26730
 
     data = np.average(data, axis=5)
     real = data[:, :, :, :, :, 0]
     imag = data[:, :, :, :, :, 1]
     data_complex = real + 1j * imag
-    print data_complex.shape        # (26730, 1, 1, 1, 4)
+    print data_complex.shape        # (26730, 1, 1, 1, 1)
     nspw = data_complex.shape[3]
     nchan = data_complex.shape[4]
-    print data_complex[:, :, :, :, 0].min(), data_complex[:, :, :, :, 0].max()
-    print data_complex[:, :, :, :, 1].min(), data_complex[:, :, :, :, 1].max()
-    print data_complex[:, :, :, :, 2].min(), data_complex[:, :, :, :, 2].max()
 
     import pdb; pdb.set_trace()
 
@@ -904,6 +915,6 @@ image_vis('test', Nsam=4000)
 
 
 
-# after running mstransform --> 1 SPWs, 4 channels each
+# after running mstransform --> 1 SPWs
 # ms2ripples_yashar_getallspw_mstransform()
 
