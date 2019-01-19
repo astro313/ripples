@@ -287,7 +287,7 @@ def image_vis(binpath='../', imsize=800, pixsize_arcsec=0.01, Nsam=None):
 # --------------------------------- ms tool -----------------------------------
 
 
-def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', debug=False):
+def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', outdir='test/', debug=False):
     """
     Get data from given spw
 
@@ -299,6 +299,7 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
 
     from array import array
     import numpy as np
+    import os
 
     ms.open(visname, nomodify=False)
 
@@ -436,32 +437,32 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
     print vvis.shape
 
     assert len(w) == len(vvis)
-    f = open('test/sigma_squared_inv.bin', 'wb')
+    f = open(os.path.join(outdir, 'sigma_squared_inv.bin'), 'wb')
     for i in range(len(w)):
         w[i].tofile(f)
     f.close()
 
-    output_file = open('test/vis_chan_0.bin', 'wb')
+    output_file = open(os.path.join(outdir, 'vis_chan_0.bin'), 'wb')
     vvis.tofile(output_file)
     output_file.close()
 
-    f = open('test/u.bin', 'wb')
+    f = open(os.path.join(outdir, 'u.bin'), 'wb')
     for i in range(0, len(uu)):
         uu[i].tofile(f)
     f.close()
 
-    f = open('test/v.bin', 'wb')
+    f = open(os.path.join(outdir, 'v.bin'), 'wb')
     for i in range(0, len(vv)):
         vv[i].tofile(f)
     f.close()
 
-    f = open('test/ant1.bin', 'wb')
+    f = open(os.path.join(outdir, 'ant1.bin'), 'wb')
     ant1 = np.asarray(ant1, dtype=np.float_)
     for i in range(0, len(ant1)):
         ant1[i].tofile(f)
     f.close()
 
-    f = open('test/ant2.bin', 'wb')
+    f = open(os.path.join(outdir, 'ant2.bin'), 'wb')
     ant2 = np.asarray(ant2, dtype=np.float_)
     for i in range(0, len(ant2)):
         ant2[i].tofile(f)
@@ -469,7 +470,7 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
 
     total_nvis = len(uu)
     blah = np.zeros((total_nvis))
-    f = open('test/chan.bin', 'wb')
+    f = open(os.path.join(outdir, 'chan.bin'), 'wb')
     for i in range(len(blah)):
         blah[i].tofile(f)
     f.close()
@@ -483,7 +484,7 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
 
     freq_per_vis = np.array([chan_freqs for _ in range(total_nvis)])
 
-    f = open('test/frequencies.bin', 'wb')
+    f = open(os.path.join(outdir, 'frequencies.bin'), 'wb')
     for i in range(len(freq_per_vis)):
         freq_per_vis[i].tofile(f)
     f.close()
@@ -713,7 +714,7 @@ def combinespw_tbtool_uvfits(vis):
 # image_vis(binpath='test')
 
 # using ms tool to extract data from all spw
-ms2ripples_yashar_getFromSPW(range(12))
+ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/')
 check_binFiles('test/')
 image_vis('test', Nsam=4000)
 
@@ -722,5 +723,5 @@ compare_tb_ms_uvw_data(vis='test/calibrated.LSRK_contphsShift_timebin660s.ms')
 combinespw_tbtool_uvfits('test/calibrated.LSRK_contphsShift_timebin660s.ms')
 
 # after running mstransform --> 1 SPWs
-ms2ripples_yashar_getFromSPW([0], 'test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms')
+ms2ripples_yashar_getFromSPW([0], 'test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms', 'test_mstransform/')
 
