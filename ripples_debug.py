@@ -319,10 +319,32 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
         aS = recS["sigma"]     # print aS.shape
         weight = aS**-2
 
-        # average two hands, rescale weights
+        # average two hands
         weight = np.average(weight, axis=0)
         print 1. / np.sqrt(np.sum(weight))
 
+        anD1 = ms.getdata(["antenna1"])
+        anD1 = anD1["antenna1"]
+
+        anD2 = ms.getdata(["antenna2"])
+        anD2 = anD2["antenna2"]
+
+        UVW = ms.getdata(["UVW"])
+        uvpoints = UVW["uvw"]
+        u = uvpoints[0]
+        v = uvpoints[1]
+        nvis = len(v)
+        print "nvis: {:}".format(nvis)
+        print "nchan in {:}: {:}".format(i_spw, len(aD[0]))
+
+        for j in range(0, len(aD[0])):
+
+            arr = (aD[0][j] + aD[1][j]) / 2        # average the two hands
+            float_array_real = array('d', arr.real)
+            float_array_imag = array('d', arr.imag)
+            vis = np.array(zip(float_array_real, float_array_imag)).flatten()
+
+        # rescale weights
         # Yashar way
         # first grouping the visibilities into bins that probe the same signal
         # take differences btw visibilities that null the sky
@@ -330,30 +352,30 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
         # is equal to twice the noise variance
 
         scaling = []
-        for a1 in np.unique(ant1):
-            for a2 in np.unique(ant2):
+        for a1 in np.unique(anD1):
+            for a2 in np.unique(anD2):
                 if a1 < a2:
-                    baselineX = (ant1 == a1) & (ant2 == a2)
+                    baselineX = (anD1 == a1) & (anD2 == a2)
 
                     if debug:
                         print a1, a2
-                        print ant1, ant2
+                        print anD1, anD2
                         print ""
-                        print a1 in ant1
-                        print a2 in ant2
+                        print a1 in anD1
+                        print a2 in anD2
                         print ""
 
-                        print np.where(a1 == ant1)
-                        print np.where(a2 == ant2)
-                        print np.where((ant1 == a1) & (ant2 == a2) == True)
+                        print np.where(a1 == anD1)
+                        print np.where(a2 == anD2)
+                        print np.where((anD1 == a1) & (anD2 == a2) == True)
 
                     # important line! if we are picking a subset of points with nsam
                     # since we may miss some baselines.
                     if baselineX.any() == True:
-                        if nchan == 1:
-                            reals = real[0, baselineX]
-                            imags = imag[0, baselineX]
-                            sigs = weight[0, baselineX]**-0.5
+                        if len(aD[0]) == 1:
+                            reals = arr.real[baselineX]
+                            imags = arr.imag[baselineX]
+                            sigs = weight[baselineX]**-0.5
                         else:
                             raise NotImplementedError(
                                 "Not implemented for MS files with more than 1 channel per spw...")
@@ -381,27 +403,6 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
         print 1. / np.sqrt(np.sum(weight))
         weight = sigma**-2
         weight = np.array(zip(weight, weight)).flatten()         # 2 * nvis elements
-
-        anD1 = ms.getdata(["antenna1"])
-        anD1 = anD1["antenna1"]
-
-        anD2 = ms.getdata(["antenna2"])
-        anD2 = anD2["antenna2"]
-
-        UVW = ms.getdata(["UVW"])
-        uvpoints = UVW["uvw"]
-        u = uvpoints[0]
-        v = uvpoints[1]
-        nvis = len(v)
-        print "nvis: {:}".format(nvis)
-        print "nchan in {:}: {:}".format(i_spw, len(aD[0]))
-
-        for j in range(0, len(aD[0])):
-
-            arr = (aD[0][j] + aD[1][j]) / 2        # average the two hands
-            float_array_real = array('d', arr.real)
-            float_array_imag = array('d', arr.imag)
-            vis = np.array(zip(float_array_real, float_array_imag)).flatten()
 
         if i_spw == spwlist[0]:
             w = weight
@@ -714,7 +715,7 @@ def combinespw_tbtool_uvfits(vis):
 # image_vis(binpath='test')
 
 # using ms tool to extract data from all spw
-ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/')
+ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/', debug=False)
 check_binFiles('test/')
 image_vis('test', Nsam=4000)
 
