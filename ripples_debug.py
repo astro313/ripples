@@ -366,6 +366,14 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
             print vvis.shape
             assert len(vvis)/2 == len(uu)
 
+    print("shapes before saving to bin files")
+    print uu.shape
+    print vv.shape
+    print ant1.shape
+    print ant2.shape
+    print w.shape
+    print vvis.shape
+
     # w/o rescaling for now
     f = open('test/sigma_squared_inv.bin', 'wb')
     for i in range(len(w)):
@@ -420,125 +428,6 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
         freq_per_vis[i].tofile(f)
     f.close()
 
-
-def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms'):
-    """
-    Get data from all the spw, after running mstranform to combine all SPWs
-
-    """
-
-    from array import array
-    import numpy as np
-
-    ms.open(visname, nomodify=False)
-
-    for i_spw in spwlist:
-        ms.selectinit(datadescid=i_spw)
-        recD = ms.getdata(["data"])
-        aD = recD["data"]
-        print aD.shape
-
-        flah_d = ms.getdata(["flag"])
-        flah_d = flah_d["flag"]
-
-        recS = ms.getdata(["sigma"])
-        aS = recS["sigma"]     # print aS.shape
-        weight = aS**-2
-        weight = np.average(weight, axis=0)
-        weight = np.array(zip(weight, weight)).flatten()         # 2 * nvis elements
-
-        anD1 = ms.getdata(["antenna1"])
-        anD1 = anD1["antenna1"]
-
-        anD2 = ms.getdata(["antenna2"])
-        anD2 = anD2["antenna2"]
-
-        UVW = ms.getdata(["UVW"])
-        uvpoints = UVW["uvw"]
-        u = uvpoints[0]
-        v = uvpoints[1]
-        nvis = len(v)
-        print "nvis: {:}".format(nvis)
-        print "nchan in {:}: {:}".format(i_spw, len(aD[0]))
-
-
-        for j in range(0, len(aD[0])):
-
-            arr = (aD[0][j] + aD[1][j]) / 2        # average the two hands
-            float_array_real = array('d', arr.real)
-            float_array_imag = array('d', arr.imag)
-            vis = np.array(zip(float_array_real, float_array_imag)).flatten()
-
-        print u.shape
-        print v.shape
-        print anD1.shape
-        print anD2.shape
-        print weight.shape
-        print vvis.shape
-        assert len(vvis)/2 == len(u)
-
-        # (26730,)
-        # (26730,)
-        # (26730,)
-        # (26730,)
-        # (53460,)
-        # (53460,)
-
-    # w/o rescaling for now
-    f = open('test_mstranform/sigma_squared_inv.bin', 'wb')
-    for i in range(len(w)):
-        w[i].tofile(f)
-    f.close()
-
-    output_file = open('test_mstranform/vis_chan_0.bin', 'wb')
-    vvis.tofile(output_file)
-    output_file.close()
-
-    f = open('test_mstranform/u.bin', 'wb')
-    for i in range(0, len(u)):
-        u[i].tofile(f)
-    f.close()
-
-    f = open('test_mstranform/v.bin', 'wb')
-    for i in range(0, len(v)):
-        v[i].tofile(f)
-    f.close()
-
-    f = open('test_mstranform/ant1.bin', 'wb')
-    anD1 = np.asarray(anD1, dtype=np.float_)
-    for i in range(0, len(anD1)):
-        anD1[i].tofile(f)
-    f.close()
-
-
-    f = open('test_mstranform/ant2.bin', 'wb')
-    anD2 = np.asarray(anD2, dtype=np.float_)
-    for i in range(0, len(anD2)):
-        anD2[i].tofile(f)
-    f.close()
-
-    blah = np.zeros((nvis))
-    f = open('test_mstranform/chan.bin', 'wb')
-    for i in range(len(blah)):
-        blah[i].tofile(f)
-    f.close()
-
-    # added
-    rec = ms.getdata(["axis_info"])
-    chan_freqs = np.squeeze(rec["axis_info"]["freq_axis"]["chan_freq"])    # [chan]
-    nchan = len(rec['axis_info']['freq_axis']['chan_freq'][:, 0])
-    assert len(aD[0]) == nchan
-    print chan_freqs
-    import pdb; pdb.set_trace()
-
-    freq_per_vis = np.array([chan_freqs for _ in range(nvis)])
-
-    f = open('test_mstranform/frequencies.bin', 'wb')
-    for i in range(len(freq_per_vis)):
-        freq_per_vis[i].tofile(f)
-    f.close()
-
-    import pdb; pdb.set_trace()
 
 
 def compare_tb_ms_uvw_data(vis):
@@ -772,7 +661,6 @@ image_vis('test', Nsam=4000)
 compare_tb_ms_uvw_data(vis='test/calibrated.LSRK_contphsShift_timebin660s.ms')
 combinespw_tbtool_uvfits('test/calibrated.LSRK_contphsShift_timebin660s.ms')
 
-
 # after running mstransform --> 1 SPWs
-ms2ripples_yashar_getallspw_mstransform()
+ms2ripples_yashar_getFromSPW([0], 'test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms')
 
