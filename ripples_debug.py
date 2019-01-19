@@ -549,7 +549,7 @@ def ms2ripples_yashar_getallspw(spwlist, visname='test/calibrated.LSRK_contphsSh
     f.close()
 
 
-def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrated.LSRK_contphsShift_timebin660s_1spw.ms'):
+def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms'):
     """
     Get data from all the spw, after running mstranform to combine all SPWs
 
@@ -596,12 +596,6 @@ def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrate
             float_array_real = array('d', arr.real)
             float_array_imag = array('d', arr.imag)
             vis = np.array(zip(float_array_real, float_array_imag)).flatten()
-            print vis[-10:]
-
-            if j == 0:
-                vvis = vis
-            elif j > 0:
-                vvis = np.hstack((vvis, vis))
 
         print u.shape
         print v.shape
@@ -616,8 +610,7 @@ def ms2ripples_yashar_getallspw_mstransform(spwlist=[0], visname='test/calibrate
         # (26730,)
         # (26730,)
         # (53460,)
-        # (213840,)
-        # hmmm....
+        # (53460,)
 
     # w/o rescaling for now
     f = open('test_mstranform/sigma_squared_inv.bin', 'wb')
@@ -916,5 +909,5 @@ image_vis('test', Nsam=4000)
 
 
 # after running mstransform --> 1 SPWs
-# ms2ripples_yashar_getallspw_mstransform()
+ms2ripples_yashar_getallspw_mstransform()
 
