@@ -287,6 +287,12 @@ def image_vis(binpath='../', imsize=800, pixsize_arcsec=0.01, Nsam=None):
 # --------------------------------- ms tool -----------------------------------
 
 def ms2ripples_yashar(visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', i_spw=0):
+    """
+        NOTE
+        ----
+        Output checked with Yashar
+
+    """
     from array import array
     import numpy as np
 
@@ -422,6 +428,10 @@ def ms2ripples_yashar(visname='test/calibrated.LSRK_contphsShift_timebin660s.ms'
 def ms2ripples_yashar_getallspw(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms'):
     """
     Get data from all the spw
+
+    NOTE
+    ----
+    Output checked with Yashar
 
     """
 
