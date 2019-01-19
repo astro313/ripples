@@ -287,7 +287,7 @@ def image_vis(binpath='../', imsize=800, pixsize_arcsec=0.01, Nsam=None):
 # --------------------------------- ms tool -----------------------------------
 
 
-def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms'):
+def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', debug=False):
     """
     Get data from given spw
 
@@ -317,7 +317,68 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
         recS = ms.getdata(["sigma"])
         aS = recS["sigma"]     # print aS.shape
         weight = aS**-2
+
+        # average two hands, rescale weights
         weight = np.average(weight, axis=0)
+        print 1. / np.sqrt(np.sum(weight))
+
+        # Yashar way
+        # first grouping the visibilities into bins that probe the same signal
+        # take differences btw visibilities that null the sky
+        # then, we simply assume that the variance in the subtracted visibilities
+        # is equal to twice the noise variance
+
+        scaling = []
+        for a1 in np.unique(ant1):
+            for a2 in np.unique(ant2):
+                if a1 < a2:
+                    baselineX = (ant1 == a1) & (ant2 == a2)
+
+                    if debug:
+                        print a1, a2
+                        print ant1, ant2
+                        print ""
+                        print a1 in ant1
+                        print a2 in ant2
+                        print ""
+
+                        print np.where(a1 == ant1)
+                        print np.where(a2 == ant2)
+                        print np.where((ant1 == a1) & (ant2 == a2) == True)
+
+                    # important line! if we are picking a subset of points with nsam
+                    # since we may miss some baselines.
+                    if baselineX.any() == True:
+                        if nchan == 1:
+                            reals = real[0, baselineX]
+                            imags = imag[0, baselineX]
+                            sigs = weight[0, baselineX]**-0.5
+                        else:
+                            raise NotImplementedError(
+                                "Not implemented for MS files with more than 1 channel per spw...")
+
+                        # randomly split points into "two sets"
+                        # subtract from "two set"
+                        # subtract from neighboring
+                        diffrs = reals - np.roll(reals, -1)
+                        diffis = imags - np.roll(imags, -1)
+                        std = np.mean([diffrs.std(), diffis.std()])
+
+                        if debug:
+                            print diffrs.min(), diffis.min()
+                            print diffrs.max(), diffis.max()
+                            print diffrs.std(), diffis.std()
+                            print std / sigs.mean() / np.sqrt(2)
+                        scaling.append(std / sigs.mean() / np.sqrt(2))
+
+        sigma = weight**-0.5
+        scaling = np.asarray(scaling).mean()
+        sigma *= scaling
+        print 'Scaling factor: ', scaling
+        print 'Sigma after scaling [mJy/beam]: ', ((sigma**-2).sum())**-0.5 * 1E+3
+        # debug, total noise after scaling
+        print 1. / np.sqrt(np.sum(weight))
+        weight = sigma**-2
         weight = np.array(zip(weight, weight)).flatten()         # 2 * nvis elements
 
         anD1 = ms.getdata(["antenna1"])
@@ -374,7 +435,7 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
     print w.shape
     print vvis.shape
 
-    # w/o rescaling for now
+    assert len(w) == len(vvis)
     f = open('test/sigma_squared_inv.bin', 'wb')
     for i in range(len(w)):
         w[i].tofile(f)
@@ -399,7 +460,6 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
     for i in range(0, len(ant1)):
         ant1[i].tofile(f)
     f.close()
-
 
     f = open('test/ant2.bin', 'wb')
     ant2 = np.asarray(ant2, dtype=np.float_)
