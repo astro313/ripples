@@ -1,5 +1,9 @@
 """
-Doesn't make any sense why the extracted data look like noise...
+Doesn't make any sense why the extracted data from ripples_prep.py look like noise... from ripples_prep.py
+
+It's solved using ms tool in this script, which will replace ripples_prep.py soon...
+
+
 
 """
 
@@ -7,289 +11,9 @@ from ripples_utils import calc_img_from_vis, check_binFiles
 import os
 
 
-def ms2ripples_debug(vis='calibrated.LSRK_contphsShift.ms', savepath='test', verbose=True, debug=False):
-
-    # doesn't work with CASA v5.1, didn't test with casa 4.7 because numpy version issues
-    # test under casa v4.5
-
-    if debug:
-        plotms(vis, xaxis='real', yaxis='imag', timebin=100)
-        plotms(vis, xaxis='UVdist', yaxis='amp', timebin=100)
-
-    import astropy.constants as c
-    import numpy as np
-
-    timebinsec = 1200      # actually same as if timebinsec = 660...
-    print("Performing time binning, by {:}s:".format(timebinsec))
-    prefix = vis.replace('.ms', '_timebin' + '{:}s.ms'.format(timebinsec))
-    prefix = os.path.basename(prefix)
-    timebinVis = os.path.join(savepath, prefix)
-    # rmtables(timebinVis)
-    default(split2)
-    split2(vis=vis,
-           timebin=str(timebinsec) + 's',
-           outputvis=timebinVis,
-           datacolumn='data',
-           keepflags=False
-           )
-
-    vis = timebinVis
-
-    # check that the MS has only 1 science target
-    tb.open(vis + '/FIELD')
-    src = tb.getcell('NAME')
-    print("Source in {}: {}\n").format(vis, src)
-    tb.close()
-
-    ms.open(vis)
-    spwInfo = ms.getspectralwindowinfo()
-    nchan = spwInfo["0"]["NumChan"]
-    npol = spwInfo["0"]["NumCorr"]
-    ms.close()
-
-    tb.open(vis)
-    # tb.colnames
-    data = tb.getcol('DATA')
-    uvw = tb.getcol('UVW')
-    uvwShape = uvw.shape
-    nvis = len(uvw[1, :])       # before dropping flagged data
-    flagRow = tb.getcol('FLAG_ROW')
-    assert (flagRow == True).any() == False
-    data_desc_id = tb.getcol("DATA_DESC_ID")
-    sigma = tb.getcol('SIGMA')
-    # weight = tb.getcol('WEIGHT')
-    weight = 1. / sigma**2
-    # del sigma
-
-    with open(os.path.join(savepath, 'u.bin'), 'wb') as f:
-        f.write(uvw[0, :])
-    with open(os.path.join(savepath, 'v.bin'), 'wb') as f:
-        f.write(uvw[1, :])
-
-    if debug:
-        print uvw[0, :].max()
-        print uvw[0, :].min()
-        print uvw[1, :].max()
-        print uvw[1, :].min()
-        print uvw.dtype        # float64
-
-    ant1 = tb.getcol('ANTENNA1')
-    ant2 = tb.getcol('ANTENNA2')
-    assert len(ant1) == nvis
-    assert len(ant2) == nvis
-    tb.done()
-
-    from sys import getsizeof
-    with open(os.path.join(savepath, 'ant1.bin'), 'wb') as f:
-        print(len(ant1))
-        print getsizeof(ant1)
-        ant1 = np.asarray(ant1, dtype=np.float_)
-        print getsizeof(ant1)
-        # print ant1.dtype
-        f.write(ant1)
-    with open(os.path.join(savepath, 'ant2.bin'), 'wb') as f:
-        print(len(ant2))
-        print getsizeof(ant2)
-        ant2 = np.asarray(ant2, dtype=np.float_)
-        print getsizeof(ant2)
-        f.write(ant2)
-
-    # import pdb; pdb.set_trace()
-
-    # ant1.tofile(os.path.join(savepath, 'ant1.bin'))
-
-    if debug:
-        print ant1.max()
-        print ant1.min()
-        print ant2.max()
-        print ant2.min()
-
-    if verbose:
-        print("Number of coorelation: ", npol)
-        print("data shape", data.shape)
-        print("uvw shape", uvwShape)
-        print("weight shpae", weight.shape)     # (npol, nvis)
-
-    tb.open(vis + '/SPECTRAL_WINDOW')
-    SPWFreqs = np.squeeze(tb.getcol("CHAN_FREQ"))
-    tb.done()
-
-    freq_per_vis = np.array([SPWFreqs[fff] for fff in data_desc_id])
-    # freqs = np.mean(SPWFreqs)
-    assert len(freq_per_vis) == nvis
-
-    with open(os.path.join(savepath, 'frequencies.bin'), 'wb') as f:
-        f.write(freq_per_vis)
-    del data_desc_id, SPWFreqs
-
-    if npol == 1:
-        real = data.real
-        imag = data.imag
-    elif npol == 2:
-        print "Real and Imag shape before averaging two hands (npol, nchan, nvis): ", data.real.shape
-        if data.shape[1] == 1:
-            # expand the channel axis for weight
-            weight = weight[:, np.newaxis, :]
-        else:
-            print weight.shape
-            print("We shouldn't have to enter this condition.")
-            import pdb
-            pdb.set_trace()
-
-        # average the two hands
-        data = np.average(data, weights=weight, axis=0)
-        weight = np.average(weight, axis=0)
-
-        real = data.real
-        imag = data.imag
-        del data
-        print "Shape after averaging two hands: ", real.shape
-
-        # before rescaling weights:
-        # plot using all the points
-        # vis = np.array(zip(real[0, :], imag[0, :])).flatten()
-        # yyy = calc_img_from_vis(uvw[0, :], uvw[1, :], weight[0, :], vis, freq_per_vis, 1200, 0.05)
-        # import pdb; pdb.set_trace()
-
-        # # only a subset of points
-        # for _ in range(5):       # make 5 images, each with Npointss
-        #     from ripples_utils import pick_highSNR
-        #     print weight.shape
-        #     _idx = pick_highSNR(weight, bestNsam=8000, plothist=False)
-        #     vis = np.array(zip(real[0, _idx], imag[0, _idx])).flatten()
-        #     calc_img_from_vis(uvw[0, _idx], uvw[1, _idx], weight[0, _idx], vis, freq_per_vis[_idx], 1200, 0.05)
-        #     import pdb; pdb.set_trace()
-    elif npol > 2:
-        raise NotImplementedError("more than 2 hands..")
-
-    print 1. / np.sqrt(np.sum(weight))
-
-    # Yashar way
-    # first grouping the visibilities into bins that probe the same signal
-    # take differences btw visibilities that null the sky
-    # then, we simply assume that the variance in the subtracted visibilities
-    # is equal to twice the noise variance
-
-    scaling = []
-    for a1 in np.unique(ant1):
-        for a2 in np.unique(ant2):
-            if a1 < a2:
-                baselineX = (ant1 == a1) & (ant2 == a2)
-
-                if debug:
-                    print a1, a2
-                    print ant1, ant2
-                    print ""
-                    print a1 in ant1
-                    print a2 in ant2
-                    print ""
-
-                    print np.where(a1 == ant1)
-                    print np.where(a2 == ant2)
-                    print np.where((ant1 == a1) & (ant2 == a2) == True)
-
-                # important line! if we are picking a subset of points with nsam
-                # since we may miss some baselines.
-                if baselineX.any() == True:
-                    if nchan == 1:
-                        reals = real[0, baselineX]
-                        imags = imag[0, baselineX]
-                        sigs = weight[0, baselineX]**-0.5
-                    else:
-                        raise NotImplementedError(
-                            "Not implemented for MS files with more than 1 channel per spw...")
-
-                    # randomly split points into "two sets"
-                    # subtract from "two set"
-                    # subtract from neighboring
-                    diffrs = reals - np.roll(reals, -1)
-                    diffis = imags - np.roll(imags, -1)
-                    std = np.mean([diffrs.std(), diffis.std()])
-
-                    if debug:
-                        print diffrs.min(), diffis.min()
-                        print diffrs.max(), diffis.max()
-                        print diffrs.std(), diffis.std()
-                        print std / sigs.mean() / np.sqrt(2)
-                    scaling.append(std / sigs.mean() / np.sqrt(2))
-    del ant1, ant2
-    sigma = weight**-0.5
-    scaling = np.asarray(scaling).mean()
-    sigma *= scaling
-    print 'Scaling factor: ', scaling
-    print 'Sigma after scaling [mJy/beam]: ', ((sigma**-2).sum())**-0.5 * 1E+3
-
-    # debug, total noise after scaling
-    print 1. / np.sqrt(np.sum(weight))
-
-    # real_1, imag_1, real_2, imag_2, etc
-    visOut = np.array(zip(real, imag)).flatten()
-    assert len(visOut) == int(nvis * 2)
-    weight = sigma**-2
-    # TODO: want to make sure this works for nchan > 1
-    weight = np.array(zip(weight, weight)).flatten()
-    assert len(weight) == len(visOut)
-
-    with open(os.path.join(savepath, 'vis_chan_0.bin'), 'wb') as f:
-        f.write(visOut)
-    with open(os.path.join(savepath, 'sigma_squared_inv.bin'), 'wb') as f:
-        f.write(weight)
-
-    blah = np.zeros((nvis))
-    with open(os.path.join(savepath, 'chan.bin'), 'wb') as f:
-        f.write(blah)
-
-    # After rescaling weights:
-    # only a subset of points
-    for _ in range(5):       # make 5 images, each with Npointss
-        from ripples_utils import pick_highSNR
-        print weight.shape
-        # already zipped the weight
-        _idx = pick_highSNR(weight[::2], bestNsam=4000, plothist=False)
-        vis = np.array(zip(real[0, _idx], imag[0, _idx])).flatten()
-        calc_img_from_vis(uvw[0, _idx], uvw[1, _idx], weight[
-                          _idx], vis, freq_per_vis[_idx], 1200, 0.01)
-        import pdb
-        pdb.set_trace()
-
-    return None
-
-
-def image_vis(binpath='../', imsize=800, pixsize_arcsec=0.01, Nsam=None):
-    import numpy as np
-    import os
-    from ripples_utils import calc_img_from_vis
-
-    # binary
-    uu = np.fromfile(os.path.join(binpath, 'u.bin'))
-    vv = np.fromfile(os.path.join(binpath, 'v.bin'))
-    weight = np.fromfile(os.path.join(binpath, 'sigma_squared_inv.bin'))
-    freqs = np.fromfile(os.path.join(binpath, 'frequencies.bin'))
-    dataVis = np.fromfile(os.path.join(binpath, 'vis_chan_0.bin'))
-
-    if Nsam:
-        from ripples_utils import pick_highSNR
-        for _ in range(5):       # make 5 images, each with Npointss
-            # already zipped the weight
-            _idx = pick_highSNR(weight[::2], bestNsam=Nsam, plothist=False)
-            _vis_real = [dataVis[iii*2: 2*iii+1][0] for iii in _idx]
-            _vis_imag = [dataVis[iii*2+1: 2*iii+2][0] for iii in _idx]
-            _vis = np.array(zip(_vis_real, _vis_imag)).flatten()
-
-            im_jybeam = calc_img_from_vis(uu[_idx], vv[_idx], weight[
-                          _idx * 2], _vis, freqs[_idx], imsize, pixsize_arcsec)
-            import pdb; pdb.set_trace()
-    else:
-        im_jybeam = calc_img_from_vis(
-            uu, vv, weight, dataVis, freqs, imsize, pixsize_arcsec)
-    return im_jybeam
-
-# --------------------------------- ms tool -----------------------------------
-
-
 def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', outdir='test/', debug=False):
     """
-    Get data from given spw
+    Get data from given spw, using ms tool
 
     NOTE
     ----
@@ -710,19 +434,19 @@ def combinespw_tbtool_uvfits(vis):
 
 
 
-# my way: using tb tool
-# ms2ripples_debug(savepath='test', verbose=False)
-# image_vis(binpath='test')
+if __name__ == '__main__':
 
-# using ms tool to extract data from all spw
-ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/', debug=False)
-check_binFiles('test/')
-image_vis('test', Nsam=4000)
+    from ripples_utils import test_image_vis
 
-# compare ms tool and tb tool and uvfits
-compare_tb_ms_uvw_data(vis='test/calibrated.LSRK_contphsShift_timebin660s.ms')
-combinespw_tbtool_uvfits('test/calibrated.LSRK_contphsShift_timebin660s.ms')
+    # using ms tool to extract data from all spw
+    ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/', debug=False)
+    check_binFiles('test/')
+    test_image_vis('test', Nsam=4000)
+    test_image_vis('test')  # all points
 
-# after running mstransform --> 1 SPWs
-ms2ripples_yashar_getFromSPW([0], 'test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms', 'test_mstransform/')
+    # compare ms tool and tb tool and uvfits
+    compare_tb_ms_uvw_data(vis='test/calibrated.LSRK_contphsShift_timebin660s.ms')
+    combinespw_tbtool_uvfits('test/calibrated.LSRK_contphsShift_timebin660s.ms')
 
+    # after running mstransform --> 1 SPWs
+    ms2ripples_yashar_getFromSPW([0], 'test/calibrated.LSRK_contphsShift_timebin660s_1spw_1chan.ms', 'test_mstransform/')
