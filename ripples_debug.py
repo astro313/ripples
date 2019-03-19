@@ -1,8 +1,6 @@
 """
-Doesn't make any sense why the extracted data from ripples_prep.py look like noise... from ripples_prep.py
 
-It's solved using ms tool in this script, which will replace ripples_prep.py soon...
-
+Script to prepare VIS for Ripples
 
 
 """
