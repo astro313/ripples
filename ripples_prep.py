@@ -250,6 +250,55 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
 if __name__ == '__main__':
 
     from ripples_utils import test_image_vis
+    import os
+    import config
+
+    ccc = config.Configurable('ripples_prep.yaml')
+    setupParam = ccc.config_dict
+    savepath = setupParam['cont']['savepath']
+    # overwrite = setupParam['cont']['overwrite']
+    # contMS = setupParam['cont']['data']['contMS']
+    # shiftpcd = setupParam['shiftpcd']['shiftpcd']
+    # timebin = setupParam['cont']['timebin']
+    # timebinsec = setupParam['cont']['timebinsec']
+    # nsam = setupParam['cont']['nsam']
+    # if nsam == 'None':
+    #     nsam = None
+    #
+    # listobs(contMS)
+
+    # if not os.path.exists(savepath):
+    #     os.mkdir(savepath)
+
+    # if shiftpcd:
+    #     field = setupParam['shiftpcd']['field']
+    #     pcd = setupParam['shiftpcd']['pcd']
+    #     outvis = shift_phs_center(contMS, pcd, field)
+    #     outpcd = get_phs_center(outvis)
+    #     print "Phase Center to be shifted to", pcd
+    #     print "Phase Center after fixvis: ", outpcd
+    #     contMS = outvis
+
+    # # if already shifted phase center, then use the MS file, regardless of whether we are setting shiftpcd in .yaml
+    # if not shiftpcd:
+    #     outvis = contMS.replace('.ms', 'phsShift.ms')
+
+    # # set contMS to the phsShift.ms
+    # if os.path.exists(outvis):
+    #     contMS = outvis
+
+    #     # debug, image contMS with CASA
+    #     if not os.path.exists(contMS[:contMS.find('.ms')] + '.image'):
+    #         clean(vis=contMS,
+    #               imagename=contMS[:contMS.find('.ms')],
+    #               spw='',
+    #               mode='mfs',
+    #               nchan=-1,
+    #               imsize=800,
+    #               cell='0.0300arcsec',
+    #               niter=0,
+    #               interactive=False,
+    #               stokes='I')
 
     # using ms tool to extract data from all spw
     ms2ripples_yashar_getFromSPW(range(12), 'test/calibrated.LSRK_contphsShift_timebin660s.ms', 'test/', debug=False)
