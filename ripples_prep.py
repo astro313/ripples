@@ -8,6 +8,40 @@ Script to prepare VIS for Ripples
 from ripples_utils import calc_img_from_vis, check_binFiles
 import os
 
+def timebinning(vis, savepath, timebinsec, timebin=False, overwrite=True, debug=False):
+
+    if timebin:
+        print("Performing time binning, by {:}s:".format(timebinsec))
+        prefix = vis.replace('.ms', '_timebin' + '{:}s.ms'.format(timebinsec))
+        prefix = os.path.basename(prefix)
+        timebinVis = os.path.join(savepath, prefix)
+        if overwrite:
+            rmtables(timebinVis)
+        default(split2)
+        split2(vis=vis,
+               timebin=str(timebinsec)+'s',
+               outputvis=timebinVis,
+               datacolumn='data',
+               keepflags=False
+            )
+        if overwrite:
+            plotms(vis=timebinVis, xaxis='uvdist', yaxis='amp', coloraxis='spw')
+            if debug and not os.path.exists(timebinVis[:timebinVis.find('.ms')] + '.image'):
+                clean(vis=timebinVis,
+                  imagename=timebinVis[:timebinVis.find('.ms')],
+                  spw='',
+                  mode='mfs',
+                  nchan=-1,
+                  imsize=800,
+                  cell='0.0300arcsec',
+                  niter=0,
+                  interactive=False,
+                  stokes='I')
+        oldvis = vis
+        vis = timebinVis
+    else:
+        raw_input("No time binning...proceed with caution. Press Enter to continue.")
+
 
 def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsShift_timebin660s.ms', outdir='test/', debug=False):
     """
@@ -211,7 +245,6 @@ def ms2ripples_yashar_getFromSPW(spwlist, visname='test/calibrated.LSRK_contphsS
     for i in range(len(freq_per_vis)):
         freq_per_vis[i].tofile(f)
     f.close()
-
 
 
 if __name__ == '__main__':

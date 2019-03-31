@@ -310,6 +310,15 @@ def get_PB_arcsec(header):
     return None
 
 
+def get_source_name(msFile):
+    tb.open(msFile+'/SOURCE')
+    objname = tb.getcol("NAME")
+    objname = objname[0]
+    tb.done()
+    return objname
+
+
+
 def get_nchan(lineFits):
     import pyfits
     import numpy as np
@@ -374,6 +383,93 @@ def vel2chan(lineFits, vel_kms, lineRestFreq_ghz=576.267931, redshift=2.7961):
     for vvv in vel_kms:
         chan.append(np.argmin(np.abs(vel - vvv)))
     return chan
+
+
+def shift_phs_center(vis, pcd, field):
+    """
+    Parameters
+    ----------
+    vis: str
+        MS file
+    pcd: str
+        in format like: '10h27m51.6s -43d54m18s'
+    field: str
+    Returns
+    -------
+    outvis: str
+        filename of the output vis, with the shifted phase center
+    Example
+    -------
+    fixvis(vis=vis,
+           outpuvis='ngc3256-fixed.ms',
+           field='NGC3256',
+           phasecenter='J2000 10h27m51.6s -43d54m18s')
+    """
+
+    outvis = vis.replace('.ms', 'phsShift.ms')
+    fixvis(vis=vis, outputvis=outvis, field=field,
+           phasecenter='J2000 ' + pcd)
+    return outvis
+
+
+def check_vis_fixvis(msFile, msFileFixvis):
+    """
+    compare visibilities from msFile before and after running fixvis()
+    According to documentation, fixbis will recalculate the u,v,w coordinates relative to the new phase center.
+    https://casa.nrao.edu/casadocs/casa-5.1.1/uv-manipulation/recalculation-of-uvw-values-fixvis
+    """
+
+    tb.open(msFile)
+    data1 = tb.getcol('DATA')
+    uvw1 = tb.getcol('UVW')
+    tb.close()
+
+    tb.open(msFileFixvis)
+    data0 = tb.getcol('DATA')
+    uvw0 = tb.getcol('UVW')
+    tb.close()
+
+    print data1[:100]
+    print data0[:100]
+
+    print uvw1[0, :100]
+    print uvw0[0, :100]
+
+    print uvw1[1, :100]
+    print uvw0[1, :100]
+
+    return None
+
+
+def get_phs_center(msfile):
+    """ get the phase center of the MS file using CASA taskinit.ms
+    Parameters
+    ----------
+    msfile: str
+        measurement set filename
+    Returns
+    -------
+    pcd:
+        phase center
+    Note
+    ----
+    may need further modification if nField > 1 unless it is the same for all fields (need further investigation)
+    """
+
+    from taskinit import ms
+    ms.open(msfile)
+    pc = ms.getfielddirmeas()
+    if not isinstance(pc, dict) is True:
+        pc()
+    epoch = pc['refer']
+    pcd_dec = pc['m1']['value'] * 180 / np.pi
+    pcd_ra = pc['m0']['value'] * 180 / np.pi
+    if pcd_ra < 0:
+        pcd_ra += 360
+    ms.done()
+    pcd = [pcd_ra, pcd_dec]
+    return pcd
+
 
 
 if __name__ == '__main__':
