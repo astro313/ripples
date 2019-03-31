@@ -84,8 +84,7 @@ class Analysis(object):
         return ccc
 
 
-    def plot_walker(self, saveFig=False):
-
+    def setup_parameters(self):
         if self.potential == 'SIE':
             param_to_latex = dict(re=r"$R_E$",
                                   px=r"$P_x$",
@@ -93,18 +92,24 @@ class Analysis(object):
                                   xcent=r"$x_{\rm cent}$",
                                   ycent=r"$y_{\rm cent}$")
 
-            params = ["re", "px", "py", "xcent", "ycent"]
+            self.params = ["re", "px", "py", "xcent", "ycent"]
         else:
             raise NotImplementedError
+
+
+    def plot_walker(self, saveFig=False):
+
+        if not hasattr(self, 'params'):
+            self.setup_parameters()
 
         # plot
         # Create a figure object with same aspect ratio as a sheet of paper...
         fig = plt.figure(figsize=(16, 20.6))
 
         # I want the plot of individual walkers to span 2 columns
-        gs = gridspec.GridSpec(len(params), 3)
+        gs = gridspec.GridSpec(len(self.params), 3)
 
-        for ii, param in enumerate(params):
+        for ii, param in enumerate(self.params):
 
             ax1 = plt.subplot(gs[ii, :2])
             ax1.axvline(0,
@@ -127,7 +132,7 @@ class Analysis(object):
             # ax1.yaxis.set_ticks([])
 
             # For the plot on the bottom, add an x-axis label. Hide all others
-            if ii == len(params) - 1:
+            if ii == len(self.params) - 1:
                 ax1.set_xlabel("step number", fontsize=16,
                                labelpad=18, color='k')
             else:
@@ -210,6 +215,29 @@ class Analysis(object):
             plt.show(block=False)
 
 
+    def find_best_param(self):
+        like = self.merge_chains_from_all_walkers(0)
+        idx, = np.where(like == np.min(like))
+        idx = idx[0]       # often can have redundant ones with same liklihood because of chains and walkers
+        self.bestlike = like[idx]
+
+        # find corresponding parameters
+        if not hasattr(self, 'params'):
+            self.setup_parameters()
+
+        best_param = []
+        for ii, pp in enumerate(self.params):
+            cc = self.merge_chains_from_all_walkers(ii+1)
+            best_param.append(cc[idx])
+        self.best_param = best_param
+
+        print "best-fit likelihood"
+        print self.bestlike
+        print "best-fit params: "
+        print self.params
+        print self.best_param
+
+
     def imaging_model(self, img, saveFig=True):
 
         plt.figure()
@@ -232,12 +260,14 @@ class Analysis(object):
             plt.show(block=False)
 
 
-
 if __name__ == '__main__':
     datapathPrefix='./data/RXJ0911/Analysis/'
 
     # from ripples_analysis import Analysis
     out = Analysis('./data/RXJ0911/pars_file_o.xml', burn=500)
+
+    out.find_best_param()
+
     out.plot_chi2(saveFig=True)
     out.plot_walker(saveFig=True)
 
